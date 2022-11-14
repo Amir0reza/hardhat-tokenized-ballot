@@ -10,6 +10,7 @@ import { Address } from "hardhat-deploy/dist/types"
 
 const abiCoder = new ethers.utils.AbiCoder()
 
+// const chainId = network.config.chainId
 const chainId = network.config.chainId
 
 function buildDomainSeparator(
@@ -27,12 +28,13 @@ function buildDomainSeparator(
     )
 }
 
-async function getPermitData(
-    _permitTypeHash: any,
+async function buildEIP712HashPermit(
+    _permitTypeHash: string,
     _owner: Address,
     _spender: Address,
     _value: any,
-    _deadline: any
+    _deadline: any,
+    _CACHED_DOMAIN_SEPARATOR: any
 ) {
     const _nonce = await ethers.provider.getTransactionCount(_owner)
     const structHash = ethers.utils.keccak256(
@@ -41,7 +43,13 @@ async function getPermitData(
             [_permitTypeHash, _owner, _spender, _value, _nonce, _deadline]
         )
     )
-    const hash = 
+    const hash = ethers.utils.keccak256(
+        ethers.utils.solidityPack(
+            ["string", "bytes32", "bytes32"],
+            ["\x19\x01", _CACHED_DOMAIN_SEPARATOR, structHash]
+        )
+    )
+    return hash
 }
 
 if (chainId != 31337) {
@@ -496,6 +504,7 @@ if (chainId != 31337) {
                         _CACHED_THIS
                     )
                 })
+
                 describe("Constructor", async () => {
                     it("Correctly initialize the domain seperator", async () => {
                         const domainSeperatot =
@@ -503,9 +512,40 @@ if (chainId != 31337) {
                         expect(domainSeperatot).to.eq(_CACHED_DOMAIN_SEPARATOR)
                     })
                 })
+
+                describe("Permit function", async () => {
+                    it.skip("Approve spender to spend on behalf of owner", async () => {
+                        const hash = await buildEIP712HashPermit(
+                            _PERMIT_TYPEHASH,
+                            acc1.address,
+                            acc2.address,
+                            1000,
+                            10,
+                            _CACHED_DOMAIN_SEPARATOR
+                        )
+                    })
+                })
             })
 
-            describe("ERC20Votes", function () {})
+            describe("ERC20Votes", function () {
+                beforeEach(async () => {
+                    await myERC20Votes.mint(acc1.address, 1000)
+                })
+
+                describe("delegate function", function () {
+                    it.only("Account 1 can delegate to itself", async () => {
+                        await myERC20Votes.connect(acc1).delegate(acc1.address)
+                        const votingPower = await myERC20Votes.getVotes(acc1.address)
+                        expect(votingPower.toString()).to.eq("1000")
+                    })
+
+                    it.only("Account 1 can delegate to account 2", async () => {
+                        await myERC20Votes.connect(acc1).delegate(acc2.address)
+                        const votingPower = await myERC20Votes.getVotes(acc2.address)
+                        expect(votingPower.toString()).to.eq("1000")
+                    })
+                })
+            })
         })
     })
 }

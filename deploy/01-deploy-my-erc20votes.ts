@@ -19,7 +19,7 @@ const deployMyERC20Votes: DeployFunction = async function (
         from: deployer.address,
         log: true,
         args: args,
-        waitConfirmations: 1,
+        waitConfirmations: 3,
     })
 
     log(`myERC20Votes deployed at ${myERC20Votes.address}`)

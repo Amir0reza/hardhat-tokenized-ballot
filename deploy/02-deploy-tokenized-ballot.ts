@@ -4,7 +4,7 @@ import verify from "../utils/verify"
 import { ethers } from "hardhat"
 
 export const PROPOSALS = ["Chocolate", "Vanilla", "Lemon", "Almond"]
-export const TARGET_BLOCK_NUMBER = 20
+export const TARGET_BLOCK_NUMBER = 7955380
 
 function convertStringArrayToBytes32(array: string[]) {
     const bytes32Array = []
@@ -38,7 +38,7 @@ const deployTokenizedBallot: DeployFunction = async function (
         from: deployer.address,
         log: true,
         args: args,
-        waitConfirmations: 1,
+        waitConfirmations: 3,
     })
 
     log(`TokenizedBallot deployed at ${tokenizedBallot.address}`)
