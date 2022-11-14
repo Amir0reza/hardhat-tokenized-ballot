@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+        "target": "es2020",
+        "module": "commonjs",
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "strict": true
+    },
+    "include": ["./scripts", "./test", "./deploy", "./deploy-helpers"],
+    "files": ["./hardhat.config.ts", "./test/unit/tokenizedBallot.test.ts"]
+}
