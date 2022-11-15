@@ -10,15 +10,15 @@ const main = async (account: Address) => {
         deployer
     )
 
-    console.log("Giving voting tokens (10) ...")
+    console.log("Delegating voting power ...")
 
-    const transactionResponse = await myERC20Votes.mint(account, 10)
+    const transactionResponse = await myERC20Votes.delegate(account)
     await transactionResponse.wait(1)
 
     console.log("Vote token granted")
 }
 
-const account: Address = process.env.give_voting_token_to!
+const account: Address = process.env.delegate_vote_to!
 main(account)
     .then(() => process.exit(0))
     .catch((error) => {

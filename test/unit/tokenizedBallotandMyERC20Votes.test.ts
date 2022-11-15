@@ -108,6 +108,23 @@ if (chainId != 31337) {
                     }
                 })
             })
+
+            describe.only("vote function", function () {
+                beforeEach(async () => {
+                    await myERC20Votes.mint(deployer.address, 10)
+                    await myERC20Votes.delegate(acc1.address)
+                })
+
+                it("change vote correctly", async () => {
+                    const votingPower = await myERC20Votes.getPastVotes(
+                        acc1.address,
+                        0
+                    )
+                    await tokenizedBallot.connect(acc1).vote(1, 10)
+                    const expectedVotes = (await tokenizedBallot.proposals(1)).voteCount
+                    expect(expectedVotes.toString()).to.eq("10")
+                })
+            })
         })
 
         describe("My ERC20 Votes Contract", function () {
@@ -533,15 +550,19 @@ if (chainId != 31337) {
                 })
 
                 describe("delegate function", function () {
-                    it.only("Account 1 can delegate to itself", async () => {
+                    it("Account 1 can delegate to itself", async () => {
                         await myERC20Votes.connect(acc1).delegate(acc1.address)
-                        const votingPower = await myERC20Votes.getVotes(acc1.address)
+                        const votingPower = await myERC20Votes.getVotes(
+                            acc1.address
+                        )
                         expect(votingPower.toString()).to.eq("1000")
                     })
 
-                    it.only("Account 1 can delegate to account 2", async () => {
+                    it("Account 1 can delegate to account 2", async () => {
                         await myERC20Votes.connect(acc1).delegate(acc2.address)
-                        const votingPower = await myERC20Votes.getVotes(acc2.address)
+                        const votingPower = await myERC20Votes.getVotes(
+                            acc2.address
+                        )
                         expect(votingPower.toString()).to.eq("1000")
                     })
                 })
