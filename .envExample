@@ -1,0 +1,8 @@
+GOERLI_RPC_URL=https://eth-goerli.g.alchemy.com/v2/"Api key"
+ETHERSCAN_API_KEY="Api key"
+COINMARKETCAP_API_KEY=4"Api key"
+
+give_voting_token_to=some address
+delegate_vote_to=some address
+proposalIndex=0
+account_voting_power=some address

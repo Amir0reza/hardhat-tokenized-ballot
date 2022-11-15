@@ -109,7 +109,7 @@ if (chainId != 31337) {
                 })
             })
 
-            describe.only("vote function", function () {
+            describe("vote function", function () {
                 beforeEach(async () => {
                     await myERC20Votes.mint(deployer.address, 10)
                     await myERC20Votes.delegate(acc1.address)
