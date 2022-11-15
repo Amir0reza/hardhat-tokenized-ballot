@@ -36,13 +36,35 @@ async function buildEIP712HashPermit(
     _deadline: any,
     _CACHED_DOMAIN_SEPARATOR: any
 ) {
-    const _nonce = await ethers.provider.getTransactionCount(_owner)
-    const structHash = ethers.utils.keccak256(
-        abiCoder.encode(
-            ["bytes32", "address", "address", "uint256", "uint256", "uint256"],
-            [_permitTypeHash, _owner, _spender, _value, _nonce, _deadline]
+    let _nonce = await ethers.provider.getTransactionCount(_owner)
+    let structHash: string
+    if (
+        _permitTypeHash ==
+        "0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9"
+    ) {
+        _nonce = await ethers.provider.getTransactionCount(_owner)
+        structHash = ethers.utils.keccak256(
+            abiCoder.encode(
+                [
+                    "bytes32",
+                    "address",
+                    "address",
+                    "uint256",
+                    "uint256",
+                    "uint256",
+                ],
+                [_permitTypeHash, _owner, _spender, _value, _nonce, _deadline]
+            )
         )
-    )
+    } else {
+        structHash = ethers.utils.keccak256(
+            abiCoder.encode(
+                ["bytes32", "address", "uint256", "uint256"],
+                [_permitTypeHash, _spender, _nonce, _deadline]
+            )
+        )
+    }
+
     const hash = ethers.utils.keccak256(
         ethers.utils.solidityPack(
             ["string", "bytes32", "bytes32"],
@@ -116,12 +138,9 @@ if (chainId != 31337) {
                 })
 
                 it("change vote correctly", async () => {
-                    const votingPower = await myERC20Votes.getPastVotes(
-                        acc1.address,
-                        0
-                    )
                     await tokenizedBallot.connect(acc1).vote(1, 10)
-                    const expectedVotes = (await tokenizedBallot.proposals(1)).voteCount
+                    const expectedVotes = (await tokenizedBallot.proposals(1))
+                        .voteCount
                     expect(expectedVotes.toString()).to.eq("10")
                 })
             })
@@ -511,6 +530,14 @@ if (chainId != 31337) {
                     )
                 )
 
+                const _DELEGATION_TYPEHASH = ethers.utils.keccak256(
+                    ethers.utils.hexlify(
+                        ethers.utils.toUtf8Bytes(
+                            "Delegation(address delegatee,uint256 nonce,uint256 expiry)"
+                        )
+                    )
+                )
+
                 beforeEach(async () => {
                     _CACHED_THIS = myERC20Votes.address
                     _CACHED_DOMAIN_SEPARATOR = buildDomainSeparator(
@@ -530,16 +557,70 @@ if (chainId != 31337) {
                     })
                 })
 
-                describe("Permit function", async () => {
-                    it.skip("Approve spender to spend on behalf of owner", async () => {
-                        const hash = await buildEIP712HashPermit(
+                describe.only("Permit function", async () => {
+                    let hashPermit: string, hashDelegate: string
+                    beforeEach(async () => {
+                        hashPermit = await buildEIP712HashPermit(
                             _PERMIT_TYPEHASH,
                             acc1.address,
                             acc2.address,
                             1000,
-                            10,
+                            Math.floor(Date.now() / 1000 + 10),
                             _CACHED_DOMAIN_SEPARATOR
                         )
+
+                        hashDelegate = await buildEIP712HashPermit(
+                            _DELEGATION_TYPEHASH,
+                            acc1.address,
+                            acc2.address,
+                            1000,
+                            Math.floor(Date.now() / 1000 + 10),
+                            _CACHED_DOMAIN_SEPARATOR
+                        )
+
+                        await myERC20Votes.mint(acc1.address, 1000)
+
+                    })
+
+                    it("Correctly approve from deployer, message signed by acc1", async () => {
+                        const signingKey = new ethers.utils.SigningKey(
+                            "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
+                        )
+                        const sig = signingKey.signDigest(hashPermit)
+                        await myERC20Votes.permit(
+                            acc1.address,
+                            acc2.address,
+                            1000,
+                            Math.floor(Date.now() / 1000 + 10),
+                            sig.v,
+                            sig.r,
+                            sig.s
+                        )
+                        const expectedAllowance = await myERC20Votes.allowance(
+                            acc1.address,
+                            acc2.address
+                        )
+                        expect(expectedAllowance.toString()).to.eq("1000")
+                    })
+
+                    it("Correctly delegate from deployer, message signed by acc1", async () => {
+                        const signingKey = new ethers.utils.SigningKey(
+                            "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
+                        )
+                        const sig = signingKey.signDigest(hashDelegate)
+                        const nonce = await acc1.getTransactionCount()
+                        await myERC20Votes.delegateBySig(
+                            acc2.address,
+                            nonce,
+                            Math.floor(Date.now() / 1000 + 10),
+                            sig.v,
+                            sig.r,
+                            sig.s
+                        )
+                        const expectedVotes = await myERC20Votes.getVotes(
+                            acc2.address
+                        )
+                        expect(expectedVotes.toString()).to.eq("1000")
                     })
                 })
             })

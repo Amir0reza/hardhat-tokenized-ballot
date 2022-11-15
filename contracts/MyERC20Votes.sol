@@ -48,4 +48,10 @@ contract MyERC20Votes is ERC20, AccessControl, ERC20Permit, ERC20Votes {
     {
         super._burn(account, amount);
     }
+
+    // extra stuff
+
+    function blocktime() public view returns (uint256) {
+        return block.timestamp;
+    }
 }
