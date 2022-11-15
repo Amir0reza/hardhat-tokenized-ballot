@@ -557,7 +557,7 @@ if (chainId != 31337) {
                     })
                 })
 
-                describe.only("Permit function", async () => {
+                describe("Permit function", async () => {
                     let hashPermit: string, hashDelegate: string
                     beforeEach(async () => {
                         hashPermit = await buildEIP712HashPermit(
