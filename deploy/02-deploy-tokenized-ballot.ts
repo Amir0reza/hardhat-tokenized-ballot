@@ -4,7 +4,7 @@ import verify from "../utils/verify"
 import { ethers } from "hardhat"
 
 export const PROPOSALS = ["Chocolate", "Vanilla", "Lemon", "Almond"]
-export const TARGET_BLOCK_NUMBER = 4
+export const TARGET_BLOCK_NUMBER = 7990301
 
 function convertStringArrayToBytes32(array: string[]) {
     const bytes32Array = []
