@@ -11,8 +11,6 @@ There are several scripts added so a person can interact with the smart contract
 5. give voting token
 6. query result
 
--   Also check the front end for better user experience
-
 Try running some of the following tasks:
 
 ```shell
