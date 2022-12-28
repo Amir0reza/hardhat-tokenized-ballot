@@ -29,17 +29,18 @@ function buildDomainSeparator(
 }
 
 async function buildEIP712HashPermit(
-    _permitTypeHash: string,
+    _TypeHash: string,
     _owner: Address,
     _spender: Address,
     _value: any,
+    _proposal: any,
     _deadline: any,
     _CACHED_DOMAIN_SEPARATOR: any
 ) {
     let _nonce = await ethers.provider.getTransactionCount(_owner)
     let structHash: string
     if (
-        _permitTypeHash ==
+        _TypeHash ===
         "0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9"
     ) {
         _nonce = await ethers.provider.getTransactionCount(_owner)
@@ -53,14 +54,24 @@ async function buildEIP712HashPermit(
                     "uint256",
                     "uint256",
                 ],
-                [_permitTypeHash, _owner, _spender, _value, _nonce, _deadline]
+                [_TypeHash, _owner, _spender, _value, _nonce, _deadline]
+            )
+        )
+    } else if (
+        _TypeHash ===
+        "0xe48329057bfd03d55e49b547132e39cffd9c1820ad7b9d4c5307691425d15adf"
+    ) {
+        structHash = ethers.utils.keccak256(
+            abiCoder.encode(
+                ["bytes32", "address", "uint256", "uint256"],
+                [_TypeHash, _spender, _nonce, _deadline]
             )
         )
     } else {
         structHash = ethers.utils.keccak256(
             abiCoder.encode(
-                ["bytes32", "address", "uint256", "uint256"],
-                [_permitTypeHash, _spender, _nonce, _deadline]
+                ["bytes32", "uint256", "uint256", "uint256", "uint256"],
+                [_TypeHash, _proposal, _value, _nonce, _deadline]
             )
         )
     }
@@ -138,10 +149,94 @@ if (chainId != 31337) {
                 })
 
                 it("change vote correctly", async () => {
-                    await tokenizedBallot.connect(acc1).vote(1, 10)
+                    const txResponse = await tokenizedBallot
+                        .connect(acc1)
+                        .vote(1, 10)
+                    const txReciept = await txResponse.wait()
+
                     const expectedVotes = (await tokenizedBallot.proposals(1))
                         .voteCount
                     expect(expectedVotes.toString()).to.eq("10")
+                })
+
+                it("emits the enet correctly", async () => {
+                    expect(await tokenizedBallot.connect(acc1).vote(1, 10))
+                        .to.emit(tokenizedBallot, "Vote")
+                        .withArgs(acc1.address, 1, 10)
+                })
+            })
+
+            describe.skip("vote With Permit function", function () {
+                const contractName: string = "TokenizedBallot"
+                const version: string = "1"
+                const _HASHED_NAME = ethers.utils.keccak256(
+                    ethers.utils.hexlify(ethers.utils.toUtf8Bytes(contractName))
+                )
+                const _HASHED_VERSION = ethers.utils.keccak256(
+                    ethers.utils.hexlify(ethers.utils.toUtf8Bytes(version))
+                )
+                const _CACHED_CHAIN_ID = chainId
+                let _CACHED_DOMAIN_SEPARATOR: string
+                let _CACHED_THIS
+                const _TYPE_HASH = ethers.utils.keccak256(
+                    ethers.utils.hexlify(
+                        ethers.utils.toUtf8Bytes(
+                            "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
+                        )
+                    )
+                )
+
+                const _VOTE_WITH_PERMIT_TYPEHASH = ethers.utils.keccak256(
+                    ethers.utils.hexlify(
+                        ethers.utils.toUtf8Bytes(
+                            "voteBySig(uint256 proposal,uint256 amount,uint256 nonce,uint256 expiry)"
+                        )
+                    )
+                )
+                let hashPermit: string
+
+                beforeEach(async () => {
+                    _CACHED_THIS = tokenizedBallot.address
+                    _CACHED_DOMAIN_SEPARATOR = buildDomainSeparator(
+                        _TYPE_HASH,
+                        _HASHED_NAME,
+                        _HASHED_VERSION,
+                        _CACHED_CHAIN_ID,
+                        _CACHED_THIS
+                    )
+
+                    hashPermit = await buildEIP712HashPermit(
+                        _VOTE_WITH_PERMIT_TYPEHASH,
+                        acc1.address,
+                        acc2.address,
+                        1000,
+                        "0",
+                        Math.floor(Date.now() / 1000 + 10),
+                        _CACHED_DOMAIN_SEPARATOR
+                    )
+                    await myERC20Votes.mint(deployer.address, 1000)
+                    await myERC20Votes.delegate(acc1.address)
+                })
+
+                it("Correctly vote from deployer, message signed by acc1", async () => {
+                    const signingKey = new ethers.utils.SigningKey(
+                        "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
+                    )
+                    const sig = signingKey.signDigest(hashPermit)
+
+                    expect(
+                        await tokenizedBallot.voteBySig(
+                            0,
+                            10,
+                            1000,
+                            Math.floor(Date.now() / 1000 + 10),
+                            sig.v,
+                            sig.r,
+                            sig.s
+                        )
+                    )
+                        .to.emit(tokenizedBallot, "Vote")
+                        .withArgs(acc1.address, 1, 10)
                 })
             })
         })
@@ -565,6 +660,7 @@ if (chainId != 31337) {
                             acc1.address,
                             acc2.address,
                             1000,
+                            "0",
                             Math.floor(Date.now() / 1000 + 10),
                             _CACHED_DOMAIN_SEPARATOR
                         )
@@ -574,12 +670,12 @@ if (chainId != 31337) {
                             acc1.address,
                             acc2.address,
                             1000,
+                            "0",
                             Math.floor(Date.now() / 1000 + 10),
                             _CACHED_DOMAIN_SEPARATOR
                         )
 
                         await myERC20Votes.mint(acc1.address, 1000)
-
                     })
 
                     it("Correctly approve from deployer, message signed by acc1", async () => {

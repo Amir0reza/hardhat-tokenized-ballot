@@ -4,7 +4,7 @@ import verify from "../utils/verify"
 import { ethers } from "hardhat"
 
 export const PROPOSALS = ["Chocolate", "Vanilla", "Lemon", "Almond"]
-export const TARGET_BLOCK_NUMBER = 7990301
+export const TARGET_BLOCK_NUMBER = 4//7994956
 
 function convertStringArrayToBytes32(array: string[]) {
     const bytes32Array = []
@@ -24,7 +24,7 @@ const deployTokenizedBallot: DeployFunction = async function (
     const myERC20VotesAddress = myERC20Votes.address
 
     const deployer = (await ethers.getSigners())[0]
-    log(`The deployer address is: ${deployer}`)
+    log(`The deployer address is: ${deployer.address}`)
 
     const chainId = network.config.chainId
 
@@ -32,6 +32,7 @@ const deployTokenizedBallot: DeployFunction = async function (
         convertStringArrayToBytes32(PROPOSALS),
         myERC20VotesAddress,
         TARGET_BLOCK_NUMBER,
+        "TokenizedBallot"
     ]
     log("Deploying TokenizedBallot and waiting for confirmations...")
     const tokenizedBallot = await deploy("TokenizedBallot", {

@@ -1,13 +1,21 @@
-# Sample Hardhat Project
+# Sample tokenized ballot contract
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
+This contract contains two main part, the ERC20 token and the ballot.
+
+There are several scripts added so a person can interact with the smart contract using CLI:
+
+1. Casting vote
+2. checking the voting power
+3. delegating the voting power
+4. giving the minting role (currently in control of the ballot contract)
+5. give voting token
+6. query result
+
+-   Also check the front end for better user experience
 
 Try running some of the following tasks:
 
 ```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat run scripts/deploy.ts
+yarn hardhat run scripts/*
+yarn hardhat deploy
 ```

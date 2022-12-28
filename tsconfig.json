@@ -7,5 +7,8 @@
         "strict": true
     },
     "include": ["./scripts", "./test", "./deploy", "./deploy-helpers"],
-    "files": ["./hardhat.config.ts", "./test/unit/tokenizedBallot.test.ts"]
+    "files": [
+        "./hardhat.config.ts",
+        "./test/unit/tokenizedBallotandMyERC20Votes.test.ts"
+    ]
 }
